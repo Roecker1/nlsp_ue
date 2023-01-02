@@ -32,7 +32,9 @@ class MLPModel(nn.Module):
 
 class PolynomialModel:
     def __init__(self, order: int):
-        raise NotImplementedError
+        self.order: int = order
+        self.alpha: np.ndarray
+
 
     def predict(self, x):
         """Compute the network output for a given input and return the result as numpy array.
@@ -47,7 +49,7 @@ class PolynomialModel:
         numpy.array
             The model output
         """
-        raise NotImplementedError
+        return np.array([sum(np.tile(x_n, (self.order + 1,)) ** np.arange(self.order + 1) * self.alpha) for x_n in x])
 
     def fit(self, data, targets):
         """Fit coefficients of the polynomial model on the given data.
@@ -63,7 +65,25 @@ class PolynomialModel:
         list
             The training set MSE score
         """
-        raise NotImplementedError
+        A = self._make_feature_matrix(data, self.order)
+        alpha = np.linalg.pinv(A) @ targets.reshape(-1, 1)
+        self.alpha = alpha.ravel()
+        
+        return self._mse(targets, self.predict(data))
+    
+    
+    def _make_feature_matrix(self, x, N):
+        phi_x = lambda x, k: np.tile(x, (k + 1,)) ** np.arange(k+1)
+        
+        A = np.array([phi_x(x_n, N) for x_n in x])
+        return A
+    
+    
+    def _mse(self, y_true, y_pred):
+        N = len(y_true)
+        assert N == len(y_pred)
+        
+        return np.mean((y_true - y_pred) ** 2)
 
 
 class RBFModel:
