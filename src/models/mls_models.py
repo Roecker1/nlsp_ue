@@ -35,6 +35,8 @@ class PolynomialModel:
         self.order: int = order
         self.alpha: np.ndarray
 
+    def __str__(self):
+        return "PolynomialModel"
 
     def predict(self, x):
         """Compute the network output for a given input and return the result as numpy array.
@@ -49,7 +51,7 @@ class PolynomialModel:
         numpy.array
             The model output
         """
-        return np.array([sum(np.tile(x_n, (self.order + 1,)) ** np.arange(self.order + 1) * self.alpha) for x_n in x])
+        return np.array([sum(self.pbf(x_n, self.order) * self.alpha) for x_n in x])
 
     def fit(self, data, targets):
         """Fit coefficients of the polynomial model on the given data.
@@ -72,14 +74,15 @@ class PolynomialModel:
         return self._mse(targets, self.predict(data))
     
     
-    def _make_feature_matrix(self, x, N):
-        phi_x = lambda x, k: np.tile(x, (k + 1,)) ** np.arange(k+1)
-        
-        A = np.array([phi_x(x_n, N) for x_n in x])
+    def pbf(self, x, k):
+        return np.tile(x, (k + 1,)) ** np.arange(k+1)
+    
+    def _make_feature_matrix(self, x, N):        
+        A = np.array([self.pbf(x_n, N) for x_n in x])
         return A
     
-    
-    def _mse(self, y_true, y_pred):
+    @staticmethod
+    def _mse(y_true, y_pred):
         N = len(y_true)
         assert N == len(y_pred)
         
@@ -88,10 +91,33 @@ class PolynomialModel:
 
 class RBFModel:
     def __init__(self, order: int, lengthscale: float = 10.):
-        raise NotImplementedError
+        self.order = order
+        self.lengthscale = lengthscale
+        self.alpha: np.ndarray
+        self.centers: np.ndarray
+        
+    def __str__(self):
+        return "RBFModel"
 
     def predict(self, x):
-        raise NotImplementedError
+        return np.array([sum(self.rbf(x_n, self.centers, self.lengthscale) * self.alpha[1:], self.alpha[0]) for x_n in x])
 
     def fit(self, data, targets):
-        raise NotImplementedError
+        self.centers = np.linspace(data.min(), data.max(), self.order-1)
+        return PolynomialModel.fit(self, data, targets)
+    
+    
+    @staticmethod
+    def rbf(x, c, w):
+        return np.e ** -((x - c) ** 2 / w)
+    
+    
+    def _make_feature_matrix(self, x, N):      
+        phi_x = lambda x: np.append(np.array([1]), self.rbf(x, self.centers, self.lengthscale))
+        
+        A = np.array([phi_x(x_n) for x_n in x])
+        return A
+
+    def _mse(self, y_true, y_pred):
+        return PolynomialModel._mse(y_true, y_pred)
+    
