@@ -7,7 +7,7 @@ class KeyWordCNN1d(nn.Module):
     """
     """
 
-    def __init__(self, num_classes, num_features, num_kernels, mem_depth):
+    def __init__(self, num_classes, num_features, num_kernels, mem_depth, num_hidden=20):
         """
         Parameters
         ----------
@@ -21,10 +21,17 @@ class KeyWordCNN1d(nn.Module):
             Memory depth = kernel size of the model
         """
         super().__init__()
-        self.num_kernels = num_kernels
-        self.mem_depth = mem_depth
-        self.num_classes = num_classes
-        self.num_features = num_features
+        # self.num_kernels = num_kernels
+        # self.mem_depth = mem_depth
+        # self.num_classes = num_classes
+        # self.num_features = num_features
+        self.conv_layer = nn.Conv1d(num_features, num_kernels, mem_depth)
+        # self.conv_layer = nn.Conv1d(1, num_kernels, mem_depth)
+        # self.pool = nn.AvgPool1d(kernel_size=num_kernels, stride=num_kernels)
+        self.hidden_layer = nn.Linear(num_kernels, num_hidden)
+        self.output_layer = nn.Linear(num_hidden, num_classes)
+        # self.output_layer = nn.Linear(num_kernels, num_classes)
+        
         #TODO: define your model here
 
     def forward(self, x:torch.Tensor):
@@ -41,10 +48,19 @@ class KeyWordCNN1d(nn.Module):
             The network output (softmax logits) of shape (batch_size, num_classes)
         """
         # TODO: implement the forward pass here
-
-        # output = F.log_softmax(...)
-        # return output
-        pass
+        x = self.conv_layer(x)
+        # x = x.flatten(start_dim=1)
+        # x = self.pool(x)
+        x = F.relu(x)
+        x = torch.mean(x, dim=2)
+        
+        #x = x.permute(0, 1) 
+        x = self.hidden_layer(x)
+        x = F.relu(x)
+        x = self.output_layer(x)
+        output = F.log_softmax(x, dim=-1)
+        return output
+        # pass
 
 
 class KeyWordCNN2d(nn.Module):
