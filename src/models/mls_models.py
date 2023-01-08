@@ -16,23 +16,32 @@ class MLPModel(nn.Module):
     hidden_sizes : int
         Number of hidden units per hidden layer
     """
-
-    def __init__(self, hidden_sizes: List[int]):
+    
+    
+    
+    def __init__(self, hidden_sizes: List[int], activation_function=torch.tanh):
         super().__init__()
         self.hidden_sizes = hidden_sizes
         self.input_layer = nn.Linear(1, hidden_sizes[0])
         self.hidden_layers = [nn.Linear(in_dim, out_dim) for in_dim, out_dim in zip(
             hidden_sizes[:-1], hidden_sizes[1:])]
         self.output_layer = nn.Linear(hidden_sizes[-1], 1)
-        self.activation_function = torch.tanh
+        self.activation_function = activation_function
 
+
+    def __str__(self):
+        return "MLPModel"
+
+        
     def forward(self, x):
+        if not torch.is_tensor(x):
+            x = torch.FloatTensor(x)
         # get input into shape (batch_size, 1)
         x = x.view((-1, 1))
 
-        x = self.activation_function(self.input_layer)
-        for linear in self.linears:
-            x = self.activation_function(linear(x))
+        x = self.activation_function(self.input_layer(x))
+        for layer in self.hidden_layers:
+            x = self.activation_function(layer(x))
 
         x = self.output_layer(x)
         return x
@@ -99,9 +108,9 @@ class MLPModel(nn.Module):
                 train_loss_list.append(train_loss.detach().numpy())
 
             # log the training loss
-            print(f'Epoch {i} training loss is {train_loss:.2f}', end='\r')
-            if i % 50 == 0:
-                print('')
+            # print(f'Epoch {i} training loss is {train_loss:.2f}', end='\r')
+            # if i % 50 == 0:
+            #     print('')
 
         return train_loss_list
 
