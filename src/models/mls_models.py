@@ -16,23 +16,23 @@ class MLPModel(nn.Module):
     hidden_sizes : int
         Number of hidden units per hidden layer
     """
-    
-    
-    
-    def __init__(self, hidden_sizes: List[int], activation_function=torch.tanh):
+
+    def __init__(
+            self, hidden_sizes: List[int],
+            activation_function=torch.tanh):
         super().__init__()
         self.hidden_sizes = hidden_sizes
         self.input_layer = nn.Linear(1, hidden_sizes[0])
-        self.hidden_layers = [nn.Linear(in_dim, out_dim) for in_dim, out_dim in zip(
-            hidden_sizes[:-1], hidden_sizes[1:])]
+        self.hidden_layers = [
+            nn.Linear(in_dim, out_dim) for in_dim,
+            out_dim in zip(hidden_sizes[: -1],
+                           hidden_sizes[1:])]
         self.output_layer = nn.Linear(hidden_sizes[-1], 1)
         self.activation_function = activation_function
-
 
     def __str__(self):
         return "MLPModel"
 
-        
     def forward(self, x):
         if not torch.is_tensor(x):
             x = torch.FloatTensor(x)
@@ -50,7 +50,9 @@ class MLPModel(nn.Module):
         output = self(x)
         return output.detach().numpy()
 
-    def fit(self, data, targets, batch_size=5, learning_rate=5e-3, max_epochs=300):
+    def fit(
+            self, data, targets, batch_size=5, learning_rate=5e-3,
+            max_epochs=300):
         """Train the network on the given data.
 
         Parameters
@@ -136,7 +138,8 @@ class PolynomialModel:
         numpy.array
             The model output
         """
-        return np.array([sum(self.pbf(x_n, self.order) * self.alpha) for x_n in x])
+        return np.array([sum(self.pbf(x_n, self.order) * self.alpha)
+                         for x_n in x])
 
     def fit(self, data, targets):
         """Fit coefficients of the polynomial model on the given data.
@@ -184,7 +187,11 @@ class RBFModel:
         return "RBFModel"
 
     def predict(self, x):
-        return np.array([sum(self.rbf(x_n, self.centers, self.lengthscale) * self.alpha[1:], self.alpha[0]) for x_n in x])
+        return np.array([
+            sum(
+                self.rbf(x_n, self.centers, self.lengthscale) *
+                self.alpha[1:],
+                self.alpha[0]) for x_n in x])
 
     def fit(self, data, targets):
         self.centers = np.linspace(data.min(), data.max(), self.order-1)
