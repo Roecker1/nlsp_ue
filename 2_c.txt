@@ -1,0 +1,8 @@
+The calculated approximations were numerically verified by fist plotting their
+input/output curves. Furthermore the resulting spectra when using a cosine signal with frequency $\theta_0 = \frac{2\pi}{5}$ and amplitude $A \in \{1,3\}$ were plotted. This was done for two different centers $c \in \{0, \ln 2\}$ of the taylor approximation.
+The resulting input/output curve can be seen in the following Figure.
+~Figure~
+
+Clearly the approximation centered at 0 better approximates the sigmoid function for inputs around zero and is visibly better for inputs $-1<x<1$.
+The approximation centered at $\ln2$ seems to be closer to the original sigmoid function for inputs further away from zero such as $x \in \{-3,3\}$.
+
