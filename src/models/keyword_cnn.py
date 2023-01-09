@@ -7,7 +7,9 @@ class KeyWordCNN1d(nn.Module):
     """
     """
 
-    def __init__(self, num_classes, num_features, num_kernels, mem_depth, num_hidden=20):
+    def __init__(
+            self, num_classes, num_features, num_kernels, mem_depth,
+            num_hidden=20, mp_kernel_size=8, mp_stride=3):
         """
         Parameters
         ----------
@@ -21,20 +23,19 @@ class KeyWordCNN1d(nn.Module):
             Memory depth = kernel size of the model
         """
         super().__init__()
-        # self.num_kernels = num_kernels
-        # self.mem_depth = mem_depth
-        # self.num_classes = num_classes
-        # self.num_features = num_features
-        self.conv_layer = nn.Conv1d(num_features, num_kernels, mem_depth, groups=num_features)
-        # self.conv_layer = nn.Conv1d(num_features, num_kernels, mem_depth)
-        # self.pool = nn.AvgPool1d(kernel_size=num_kernels, stride=num_kernels)
-        self.hidden_layer = nn.Linear(num_kernels, num_hidden)
-        self.output_layer = nn.Linear(num_hidden, num_classes)
-        # self.output_layer = nn.Linear(num_kernels, num_classes)
-        
-        #TODO: define your model here
+        self.conv_layer = nn.Conv1d(num_features, num_kernels, mem_depth)
+        self.max_pool1 = nn.MaxPool1d(mp_kernel_size, stride=mp_stride)
+        _L_out = int((num_kernels - mp_kernel_size)/mp_stride + 1)
+        # self.batch_norm1 = nn.BatchNorm1d(num_kernels, affine=False)
+        self.hidden_layer = nn.Linear(_L_out, num_hidden)
+        # self.hidden_layer = nn.Linear(num_kernels, num_hidden)
 
-    def forward(self, x:torch.Tensor):
+        # self.batch_norm2 = nn.BatchNorm1d(num_hidden, affine=False)
+        _L_out2 = int((num_hidden - mp_kernel_size)/mp_stride + 1)
+        # self.output_layer = nn.Linear(num_hidden, num_classes)
+        self.output_layer = nn.Linear(_L_out2, num_classes)
+
+    def forward(self, x: torch.Tensor):
         """Forward pass of the network.
 
         Parameters
@@ -50,13 +51,16 @@ class KeyWordCNN1d(nn.Module):
         # TODO: implement the forward pass here
         x = torch.squeeze(x)
         x = self.conv_layer(x)
+        # x = self.batch_norm1(x)
         # x = x.flatten(start_dim=1)
-        # x = self.pool(x)
         x = F.relu(x)
+
         x = torch.mean(x, dim=2)
-        
-        #x = x.permute(0, 1) 
+        x = self.max_pool1(x)
+        # x = x.permute(0, 1)
         x = self.hidden_layer(x)
+        x = self.max_pool1(x)
+        # x = self.batch_norm2(x)
         x = F.relu(x)
         x = self.output_layer(x)
         output = F.log_softmax(x, dim=-1)
@@ -68,7 +72,9 @@ class KeyWordCNN2d(nn.Module):
     """
     """
 
-    def __init__(self, num_classes, num_features, num_kernels, mem_depth, num_hidden=20):
+    def __init__(
+            self, num_classes, num_features, num_kernels, mem_depth,
+            num_hidden=20):
         """
         Parameters
         ----------
